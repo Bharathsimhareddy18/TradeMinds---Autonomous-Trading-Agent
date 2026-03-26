@@ -1,7 +1,12 @@
 fastapi[standard]
+uvicorn[standard]
 openai
 python-dotenv
 yfinance
 supabase
 apscheduler
 tenacity
+pydantic
+pydantic-settings
+feedparser
+pytz
