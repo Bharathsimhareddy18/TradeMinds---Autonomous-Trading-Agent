@@ -1,6 +1,8 @@
 # app/services/scalp_agent.py
 
 import json
+import asyncio
+import functools
 from app.config import openai_client, supabase, settings
 from app.prompts import SCALP_PROMPT
 from app.services.tools import TOOLS
@@ -65,12 +67,15 @@ async def run_scalp_agent() -> dict:
     traded = False
 
     for _ in range(10):  # max 10 tool calls per run
-        response = openai_client.chat.completions.create(
+        loop = asyncio.get_running_loop()
+        call = functools.partial(
+            openai_client.chat.completions.create,
             model="gpt-4o-mini",
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",
         )
+        response = await loop.run_in_executor(None, call)
 
         msg = response.choices[0].message
         messages.append(msg)

@@ -40,9 +40,10 @@ class ChatRequest(BaseModel):
 @app.get("/")
 def root():
     return {
-        "message": "Welcome to TradeMinds Autonomous Trading Agent API!"
-        "Version 3.0.0. Check /docs for API documentation."    
-            }   
+        "message": "Welcome to TradeMinds Autonomous Trading Agent API!",
+        "Version": "3.0.0",
+        "Documentation": "/docs"
+    }
 
 @app.get("/health")
 def health():

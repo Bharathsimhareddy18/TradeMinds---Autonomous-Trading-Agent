@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 import json
 from pydantic import BaseModel, ValidationError
 from app.logger import get_logger
+import asyncio
+import functools
 
 logger = get_logger(__name__)
 
@@ -74,7 +76,9 @@ If no strong signal found, set skip to true and explain why.
 Max 2 trades. Max ₹40,000 per trade.
 """
     logger.info("Sending data to LLM for analysis...")
-    response = client.chat.completions.create(
+    loop = asyncio.get_running_loop()
+    call = functools.partial(
+        client.chat.completions.create,
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": MOMENTUM_BUY_PROMPT},
@@ -82,6 +86,7 @@ Max 2 trades. Max ₹40,000 per trade.
         ],
         response_format={"type": "json_object"},
     )
+    response = await loop.run_in_executor(None, call)
 
     try:
         raw = json.loads(response.choices[0].message.content)

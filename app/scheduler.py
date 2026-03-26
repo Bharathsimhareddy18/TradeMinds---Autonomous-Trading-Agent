@@ -3,6 +3,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from datetime import datetime, timedelta
 import pytz
+import asyncio
 from app.logger import get_logger
 
 logger = get_logger(__name__)
@@ -15,6 +16,9 @@ MARKET_OPEN_MINUTE = 20
 MARKET_CLOSE_HOUR = 15
 MARKET_CLOSE_MINUTE = 25
 scheduler = AsyncIOScheduler(timezone=IST)
+
+# Global job lock to prevent overlapping scheduled runs
+JOB_LOCK = asyncio.Lock()
 
 
 def is_market_open() -> bool:
@@ -30,13 +34,13 @@ def is_market_open() -> bool:
 async def scalp_job():
     """Runs scalp agent. LLM decides next trigger time."""
     from app.services.scalp_agent import run_scalp_agent
+    async with JOB_LOCK:
+        if not is_market_open():
+            logger.info("[Scheduler] Market closed. Skipping scalp job.")
+            return
+        logger.info(f"[Scheduler] Scalp agent waking up at {datetime.now(IST).strftime('%H:%M IST')}")
 
-    if not is_market_open():
-        logger.info("[Scheduler] Market closed. Skipping scalp job.")
-        return
-    logger.info(f"[Scheduler] Scalp agent waking up at {datetime.now(IST).strftime('%H:%M IST')}")
-
-    result = await run_scalp_agent()
+        result = await run_scalp_agent()
     next_trigger = result.get("next_trigger_minutes", 60)
 
     # Interpret bounds in minutes for clarity
@@ -91,20 +95,20 @@ async def scalp_job():
 async def momentum_buy_job():
     """Runs at 9:20 AM — momentum buy."""
     from app.services.momentum_agent import run_momentum_buy
+    async with JOB_LOCK:
+        if not is_market_open():
+            return
 
-    if not is_market_open():
-        return
-
-    logger.info("[Scheduler] Momentum BUY agent running.")
-    await run_momentum_buy()
+        logger.info("[Scheduler] Momentum BUY agent running.")
+        await run_momentum_buy()
 
 
 async def momentum_sell_job():
     """Runs at 3:15 PM — close positions + day summary."""
     from app.services.momentum_agent import run_momentum_sell
-
-    logger.info("[Scheduler] Momentum SELL agent running.")
-    await run_momentum_sell()
+    async with JOB_LOCK:
+        logger.info("[Scheduler] Momentum SELL agent running.")
+        await run_momentum_sell()
 
 
 def start_scheduler():
