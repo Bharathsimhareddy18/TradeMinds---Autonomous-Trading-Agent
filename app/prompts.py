@@ -33,7 +33,7 @@ YOUR JOB:
 - Find stocks with strong short term signals from news
 - Decide whether to trade or skip
 - If trading: pick symbol, amount (₹{int(settings.MIN_TRADE)} to ₹{int(settings.MAX_SCALP_TRADE)}), hold duration (60 to 600 seconds)
-- Decide when you want to wake up next (30 to 120 minutes)
+- Decide when you want to wake up next (5 to 1440 minutes)
 
 RULES:
 - Always fetch news first — that is your signal source

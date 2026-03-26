@@ -1,6 +1,7 @@
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from app.scheduler import start_scheduler, scheduler
 from app.services.chat_agent import run_chat_agent
@@ -21,12 +22,27 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Allow CORS from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 
 class ChatRequest(BaseModel):
     question: str
 
 
+@app.get("/")
+def root():
+    return {
+        "message": "Welcome to TradeMinds Autonomous Trading Agent API!"
+        "Version 2.0.0. Check /docs for API documentation."    
+            }   
 
 @app.get("/health")
 def health():

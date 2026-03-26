@@ -33,8 +33,19 @@ async def scalp_job():
     result = await run_scalp_agent()
     next_trigger = result.get("next_trigger_minutes", 60)
 
-    # Calculate next run time
-    next_run = datetime.now(IST) + timedelta(minutes=next_trigger)
+    # Clamp LLM-suggested next trigger (in minutes) between 300s and 86400s.
+    # That corresponds to 5 minutes and 1440 minutes respectively.
+    MIN_MINUTES = 300 / 60
+    MAX_MINUTES = 86400 / 60
+    try:
+        suggested_minutes = float(next_trigger)
+    except Exception:
+        suggested_minutes = 60.0
+
+    clamped_minutes = max(MIN_MINUTES, min(suggested_minutes, MAX_MINUTES))
+
+    # Calculate next run time using clamped minutes
+    next_run = datetime.now(IST) + timedelta(minutes=clamped_minutes)
     market_close = datetime.now(IST).replace(hour=15, minute=30, second=0, microsecond=0)
 
     if next_run >= market_close:
@@ -48,7 +59,7 @@ async def scalp_job():
         id="scalp_dynamic",
         replace_existing=True,
     )
-    logger.info(f"[Scheduler] Next scalp check at {next_run.strftime('%H:%M IST')} ({next_trigger} mins)")
+    logger.info(f"[Scheduler] Next scalp check at {next_run.strftime('%H:%M IST')} ({int(clamped_minutes)} mins)")
 
 
 async def momentum_buy_job():

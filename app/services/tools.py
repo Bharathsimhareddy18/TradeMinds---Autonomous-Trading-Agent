@@ -118,7 +118,7 @@ TOOLS = [
                     },
                     "next_trigger_minutes": {
                         "type": "integer",
-                        "description": "When should scalp agent wake up next (30 to 120 minutes).",
+                        "description": "When should scalp agent wake up next (5 to 1440 minutes).",
                     },
                 },
                 "required": ["symbol", "amount", "hold_seconds", "reasoning", "next_trigger_minutes"],
