@@ -1,5 +1,4 @@
-from openai import OpenAI
-from app.config import supabase
+from app.config import supabase, openai_client as client
 from app.utils.get_top_movers import get_top_movers
 from app.utils.get_stock_trends_data import get_stock_trends_data
 from app.utils.get_current_stock_price import get_stock_current_price
@@ -22,7 +21,6 @@ class TradeDecision(BaseModel):
     trades: list[Trade]
     skip: bool
     skip_reason: str = ""
-client = OpenAI()
 
 
 async def run_momentum_buy():
@@ -35,7 +33,7 @@ async def run_momentum_buy():
 
     # Gather context for LLM
     movers = await get_top_movers()
-    news = get_news()
+    news = await get_news()
     balance = get_account_balance()
 
     # Check trends for each top mover
@@ -92,36 +90,36 @@ Max 2 trades. Max ₹40,000 per trade.
         logger.error(f"LLM response validation failed: {e}")
         return
 
-    if decision.get("skip"):
-        logger.info(f"Skipping. Reason: {decision.get('skip_reason')}",name=__name__)
+    if decision.skip:
+        logger.info(f"Skipping. Reason: {decision.skip_reason}")
         # Log skip to DB
         supabase.table("trades").insert({
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "kind": "MOMENTUM",
             "action": "SKIP",
-            "reasoning": decision.get("skip_reason"),
+            "reasoning": decision.skip_reason,
             "balance_after": balance["balance"],
             "status": "CLOSED",
         }).execute()
         return
 
     # Execute each trade — open position in DB
-    for trade in decision.get("trades", []):
-        symbol = trade["symbol"]
-        amount = trade["amount"]
-        reasoning = trade["reasoning"]
+    for trade in decision.trades:
+        symbol = trade.symbol
+        amount = trade.amount
+        reasoning = trade.reasoning
 
         # Fetch entry price
         price_data = await get_stock_current_price(symbol)
         if "error" in price_data:
-            print(f"[Momentum] Could not fetch price for {symbol}")
+            logger.error(f"[Momentum] Could not fetch price for {symbol}")
             continue
 
         entry_price = price_data["current_price"]
         current_balance = get_account_balance()["balance"]
 
         if current_balance < amount:
-            print(f"[Momentum] Insufficient balance for {symbol}")
+            logger.warning(f"[Momentum] Insufficient balance for {symbol}")
             continue
 
         # Deduct from balance

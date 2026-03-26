@@ -2,7 +2,10 @@ from tenacity import wait_fixed
 import yfinance as yf
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from tenacity import stop_after_attempt, wait_fixed, wait_fixed, retry
+from tenacity import stop_after_attempt, wait_fixed, retry
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
@@ -49,7 +52,7 @@ def _fetch_trends(symbol: str) -> dict:
             "trend": trend,
         }
     except Exception as e:
-        print(f"Error fetching trends for {symbol}: {e}")
+        logger.exception(f"Error fetching trends for {symbol}: {e}")
         return {"symbol": symbol, "error": str(e)}
 
 

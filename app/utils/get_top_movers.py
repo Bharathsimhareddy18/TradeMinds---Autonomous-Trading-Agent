@@ -1,7 +1,10 @@
 import yfinance as yf
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from tenacity import stop_after_attempt, wait_fixed, wait_fixed, retry 
+from tenacity import stop_after_attempt, wait_fixed, retry 
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 STOCK_UNIVERSE = [
     "RELIANCE.NS", "HDFCBANK.NS", "INFY.NS", "TCS.NS", "ICICIBANK.NS",
@@ -21,7 +24,7 @@ def _fetch_mover(symbol: str) -> dict | None:
             "change_pct": round(change_pct, 2),
         }
     except Exception as e:
-        print(f"Error fetching {symbol}: {e}")
+        logger.exception(f"Error fetching {symbol}: {e}")
         return None
 
 async def get_top_movers() -> list[dict]:

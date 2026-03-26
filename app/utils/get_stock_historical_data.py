@@ -2,7 +2,10 @@ from tenacity import wait_fixed
 import yfinance as yf
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from tenacity import stop_after_attempt, wait_fixed, wait_fixed, retry
+from tenacity import stop_after_attempt, wait_fixed, retry
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def _fetch_historical(symbol: str, days: int) -> dict:
@@ -20,7 +23,7 @@ def _fetch_historical(symbol: str, days: int) -> dict:
             "closing_prices": closes,
         }
     except Exception as e:
-        print(f"Error fetching historical data for {symbol}: {e}")
+        logger.exception(f"Error fetching historical data for {symbol}: {e}")
         return {"symbol": symbol, "error": str(e)}
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
@@ -43,4 +46,4 @@ async def get_stock_historical_data(symbol: str, days: int = 30) -> dict:
 
 if __name__ == "__main__":
     result = asyncio.run(get_stock_historical_data("RELIANCE.NS"))
-    print(result)
+    logger.info(result)

@@ -1,5 +1,5 @@
 import feedparser
-from tenacity import stop_after_attempt, wait_fixed, wait_fixed, retry
+from tenacity import stop_after_attempt, wait_fixed, retry
 
 KEYWORDS = [
     "stock", "share", "NSE", "BSE", "Nifty", "Sensex",
@@ -35,7 +35,8 @@ async def get_news() -> list[dict]:
                         "published_at": entry.get("published", "N/A"),
                     })
         except Exception as e:
-            print(f"Error fetching {feed['source']}: {e}")
+            from app.logger import get_logger
+            get_logger(__name__).exception(f"Error fetching {feed['source']}: {e}")
             continue
 
     return articles

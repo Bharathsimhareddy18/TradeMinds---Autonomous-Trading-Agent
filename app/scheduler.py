@@ -3,6 +3,9 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from datetime import datetime, timedelta
 import pytz
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 IST = pytz.timezone("Asia/Kolkata")
 scheduler = AsyncIOScheduler(timezone=IST)
@@ -23,10 +26,9 @@ async def scalp_job():
     from app.services.scalp_agent import run_scalp_agent
 
     if not is_market_open():
-        print("[Scheduler] Market closed. Skipping scalp job.")
+        logger.info("[Scheduler] Market closed. Skipping scalp job.")
         return
-
-    print(f"[Scheduler] Scalp agent waking up at {datetime.now(IST).strftime('%H:%M IST')}")
+    logger.info(f"[Scheduler] Scalp agent waking up at {datetime.now(IST).strftime('%H:%M IST')}")
 
     result = await run_scalp_agent()
     next_trigger = result.get("next_trigger_minutes", 60)
@@ -36,7 +38,7 @@ async def scalp_job():
     market_close = datetime.now(IST).replace(hour=15, minute=30, second=0, microsecond=0)
 
     if next_run >= market_close:
-        print(f"[Scheduler] Next run {next_run.strftime('%H:%M')} is past market close. Stopping for today.")
+        logger.info(f"[Scheduler] Next run {next_run.strftime('%H:%M')} is past market close. Stopping for today.")
         return
 
     # Schedule one-time next run
@@ -46,7 +48,7 @@ async def scalp_job():
         id="scalp_dynamic",
         replace_existing=True,
     )
-    print(f"[Scheduler] Next scalp check at {next_run.strftime('%H:%M IST')} ({next_trigger} mins)")
+    logger.info(f"[Scheduler] Next scalp check at {next_run.strftime('%H:%M IST')} ({next_trigger} mins)")
 
 
 async def momentum_buy_job():
@@ -56,7 +58,7 @@ async def momentum_buy_job():
     if not is_market_open():
         return
 
-    print("[Scheduler] Momentum BUY agent running.")
+    logger.info("[Scheduler] Momentum BUY agent running.")
     await run_momentum_buy()
 
 
@@ -64,7 +66,7 @@ async def momentum_sell_job():
     """Runs at 3:15 PM — close positions + day summary."""
     from app.services.momentum_agent import run_momentum_sell
 
-    print("[Scheduler] Momentum SELL agent running.")
+    logger.info("[Scheduler] Momentum SELL agent running.")
     await run_momentum_sell()
 
 
@@ -91,4 +93,4 @@ def start_scheduler():
     )
 
     scheduler.start()
-    print("[Scheduler] Started. Waiting for market hours.")
+    logger.info("[Scheduler] Started. Waiting for market hours.")

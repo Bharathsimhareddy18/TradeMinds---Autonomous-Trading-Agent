@@ -1,6 +1,9 @@
 from pydantic_settings import BaseSettings
 from supabase import create_client, Client
 from openai import OpenAI
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Settings(BaseSettings):
@@ -27,9 +30,17 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # Single shared clients — import these everywhere
-supabase: Client = create_client(
-    settings.SUPABASE_PROJECT_URL,
-    settings.SUPABASE_ANON_KEY
-)
+try:
+    supabase: Client = create_client(
+        settings.SUPABASE_PROJECT_URL,
+        settings.SUPABASE_ANON_KEY
+    )
+except Exception as e:
+    logger.warning(f"Failed to initialize Supabase client at import: {e}")
+    supabase = None
 
-openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+try:
+    openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+except Exception as e:
+    logger.warning(f"Failed to initialize OpenAI client at import: {e}")
+    openai_client = None

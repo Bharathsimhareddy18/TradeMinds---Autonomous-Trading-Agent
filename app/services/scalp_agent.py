@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 async def dispatch_tool(name: str, args: dict, news_cache: list) -> str:
     """Route tool call to correct function and return result as string."""
     if name == "get_news":
-        result = get_news()
+        result = await get_news()
         news_cache.clear()
         news_cache.extend(result)
         return json.dumps(result)
@@ -102,7 +102,7 @@ async def run_scalp_agent() -> dict:
             name = tool_call.function.name
             args = json.loads(tool_call.function.arguments)
 
-            print(f"[Scalp] Calling tool: {name} with args: {args}")
+            logger.info(f"[Scalp] Calling tool: {name} with args: {args}")
             result = await dispatch_tool(name, args, news_cache)
 
             # Capture next_trigger from buy_stock call
