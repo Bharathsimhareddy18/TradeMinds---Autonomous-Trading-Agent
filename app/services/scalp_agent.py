@@ -12,6 +12,9 @@ from app.utils.get_stock_trends_data import get_stock_trends_data
 from app.utils.get_account_balance import get_account_balance
 from app.utils.buy_stock import buy_stock
 from datetime import datetime, timezone
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 async def dispatch_tool(name: str, args: dict, news_cache: list) -> str:
@@ -51,6 +54,7 @@ async def run_scalp_agent() -> dict:
     LLM calls tools in any order it wants.
     Returns next_trigger_minutes for scheduler.
     """
+    logger.info("Starting scalp agent run...")
     messages = [
         {"role": "system", "content": SCALP_PROMPT},
         {"role": "user", "content": "Market is open. Analyze and decide."},
@@ -85,7 +89,7 @@ async def run_scalp_agent() -> dict:
                     "balance_after": balance["balance"],
                     "status": "CLOSED",
                 }).execute()
-                print(f"[Scalp] Skipped. Reason: {msg.content}")
+                logger.info(f"[Scalp] Skipped. Reason: {msg.content}")
 
             return {
                 "traded": traded,

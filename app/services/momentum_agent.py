@@ -9,6 +9,9 @@ from app.prompts import MOMENTUM_BUY_PROMPT
 from datetime import datetime, timezone
 import json
 from pydantic import BaseModel, ValidationError
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 class Trade(BaseModel):
     symbol: str
@@ -27,6 +30,8 @@ async def run_momentum_buy():
     Morning run — LLM scans top movers, checks trends,
     picks strongest momentum stocks and opens BUY positions.
     """
+    
+    logger.info("Starting morning run...")
 
     # Gather context for LLM
     movers = await get_top_movers()
@@ -70,7 +75,7 @@ Return your decision as JSON in this exact format:
 If no strong signal found, set skip to true and explain why.
 Max 2 trades. Max ₹40,000 per trade.
 """
-
+    logger.info("Sending data to LLM for analysis...")
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -84,11 +89,11 @@ Max 2 trades. Max ₹40,000 per trade.
         raw = json.loads(response.choices[0].message.content)
         decision = TradeDecision(**raw)
     except (json.JSONDecodeError, ValidationError) as e:
-        print(f"[Momentum] LLM response validation failed: {e}")
+        logger.error(f"LLM response validation failed: {e}")
         return
 
     if decision.get("skip"):
-        print(f"[Momentum] Skipping. Reason: {decision.get('skip_reason')}")
+        logger.info(f"Skipping. Reason: {decision.get('skip_reason')}",name=__name__)
         # Log skip to DB
         supabase.table("trades").insert({
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -139,7 +144,7 @@ Max 2 trades. Max ₹40,000 per trade.
             "status": "OPEN",
         }).execute()
 
-        print(f"[Momentum] Bought {symbol} at ₹{entry_price} — Amount: ₹{amount}")
+        logger.info(f"Bought {symbol} at ₹{entry_price} — Amount: ₹{amount}")
 
 
 async def run_momentum_sell():
@@ -156,7 +161,7 @@ async def run_momentum_sell():
         .execute().data
 
     if not open_trades:
-        print("[Momentum] No open positions to close.")
+        logger.info("[Momentum] No open positions to close.")
         return
 
     total_pnl = 0
@@ -198,6 +203,6 @@ async def run_momentum_sell():
             "status": "CLOSED",
         }).eq("id", trade["id"]).execute()
 
-        print(f"[Momentum] Closed {symbol} | Entry: ₹{entry_price} | Exit: ₹{exit_price} | P&L: ₹{pnl}")
+        logger.info(f"[Momentum] Closed {symbol} | Entry: ₹{entry_price} | Exit: ₹{exit_price} | P&L: ₹{pnl}")
 
-    print(f"[Momentum] Day closed. Total P&L: ₹{round(total_pnl, 2)}")
+    logger.info(f"[Momentum] Day closed. Total P&L: ₹{round(total_pnl, 2)}")
