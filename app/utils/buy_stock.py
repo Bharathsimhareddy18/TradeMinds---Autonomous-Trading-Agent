@@ -3,10 +3,8 @@ from datetime import datetime, timezone
 from app.config import supabase
 from app.utils.get_current_stock_price import get_stock_current_price
 from app.utils.calculate_pnl import calculate_pnl
-from tenacity import stop_after_attempt, wait_fixed, retry
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 async def buy_stock(
     symbol: str,
     amount: float,
@@ -81,6 +79,7 @@ async def buy_stock(
         "news_at_moment": news_at_moment[:2000],
         "reasoning": reasoning,
         "next_trigger_minutes": next_trigger_minutes,
+        "status": "CLOSED",
     }).execute()
 
     return {
