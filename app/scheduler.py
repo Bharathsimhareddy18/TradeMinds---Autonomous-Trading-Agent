@@ -11,9 +11,9 @@ logger = get_logger(__name__)
 IST = pytz.timezone("Asia/Kolkata")
 
 MARKET_OPEN_HOUR = 9
-MARKET_OPEN_MINUTE = 20
+MARKET_OPEN_MINUTE = 45
 MARKET_CLOSE_HOUR = 15
-MARKET_CLOSE_MINUTE = 25
+MARKET_CLOSE_MINUTE = 10
 
 scheduler = AsyncIOScheduler(timezone=IST)
 JOB_LOCK = asyncio.Lock()
@@ -113,7 +113,7 @@ def start_scheduler():
     )
     scheduler.add_job(
         scalp_job,
-        CronTrigger(hour=10, minute=55, day_of_week="mon-fri", timezone=IST),
+        CronTrigger(hour=9, minute=55, day_of_week="mon-fri", timezone=IST),
         id="scalp_initial",
     )
     scheduler.start()
