@@ -9,6 +9,7 @@ Live: https://trademind-agent.vercel.app
 
 ## System Architecture
 
+<img width="5515" height="4728" alt="Momentum Trading Agent-2026-03-29-080350" src="https://github.com/user-attachments/assets/383df3a6-b129-47b2-bf89-e9eb46a517c5" />
 
 
 ---
@@ -57,4 +58,8 @@ language queries about trade decisions, P&L, and strategy reasoning.
 ---
 
 ## Screenshots
+
+<img width="1920" height="1080" alt="Screenshot from 2026-03-30 17-18-30" src="https://github.com/user-attachments/assets/062ef953-167b-4002-88c9-24a90e20e26c" />
+
+<img width="1918" height="1006" alt="image" src="https://github.com/user-attachments/assets/0bb72ea7-2656-4106-b8f9-75dfac7d3273" />
 
